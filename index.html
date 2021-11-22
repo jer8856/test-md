@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>gSignIn</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+
+    <!-- Here is the code for the Google Sign-In button: -->
+    <meta name="google-signin-client_id" content="xxxx">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <!-- Here ends -->
+</head>
+
+<body>
+    <h1>The most simple Sign-In usage</h1>
+    <div class="g-signin2" data-onsuccess="onSignIn"></div>
+    <div id='content'></div>
+    <a href="#" onclick="signOut();">Sign out</a>
+</body>
+
+<script>
+    function onSignIn(googleUser) {
+
+        // print to console the user info
+        console.log('User is' + JSON.stringify(googleUser.getBasicProfile()));
+
+        var element = document.querySelector('#content')
+        element.innerText = googleUser.getBasicProfile().getGivenName();
+        var image = document.createElement('img');
+        image.setAttribute('src', googleUser.getBasicProfile().getImageUrl());
+        element.append(image);
+
+    }
+
+    function signOut() {
+        var auth2 = gapi.auth2.getAuthInstance();
+        auth2.signOut().then(function () {
+            console.log('User signed out.');
+        });
+    }
+
+</script>
+
+</html>
