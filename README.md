@@ -119,6 +119,14 @@ xhr.send('idtoken=' + id_token);
 
 ## Example of information retrieved printed to the console
 
+After configuration of google-auth you can use your client id and run the sample as follow:
+
+` pip install simple-http-server `
+
+`python -m http.server 8001 --bind localhost`
+
+Now open localhost:8001 in your browser and open console to get the information about the user.
+
 ![](./files/sample.png)
 
 ***
