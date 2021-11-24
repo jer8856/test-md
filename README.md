@@ -21,7 +21,7 @@ Any application that uses OAuth 2.0 to access Google APIs must have authorizatio
 
 - Go to the [Credentials page](https://console.developers.google.com/apis/credentials).
 - Click **Create credentials > OAuth client ID.**
-![Step 1 ](c./files/p1.png)
+![Step 1 ](c./files/cp1.png)
 - Select the **Web application** application type.
 ![Step 2 ](./files/cp2.png)
 - Name your OAuth 2.0 client and click Create
