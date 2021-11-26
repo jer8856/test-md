@@ -129,7 +129,7 @@ Check `index.js` to see a complete example.
 
 ### Sample of information retrieved
 
-```json
+```js
 {
   resourceName: 'people/xxxxx',
   etag: 'xxxxx',
@@ -222,17 +222,15 @@ except ValueError:
 
 > The GoogleIdTokenVerifier.verify() method verifies the JWT signature, the aud claim, the iss claim, and the exp claim. \nIf you want to restrict access to only members of your G Suite domain, also verify the hd claim by checking the domain name returned by the Payload.getHostedDomain() method.
 
-
-
 Calling the tokeninfo endpoint
 An easy way to validate an ID token signature for debugging is to use the tokeninfo endpoint. Calling this endpoint involves an additional network request that does most of the validation for you while you test proper validation and payload extraction in your own code. It is not suitable for use in production code as requests may be throttled or otherwise subject to intermittent errors.
 
 To validate an ID token using the tokeninfo endpoint, make an HTTPS POST or GET request to the endpoint, and pass your ID token in the id_token parameter. For example, to validate the token "XYZ123", make the following GET request:
 
-
-```
+```js
 https://oauth2.googleapis.com/tokeninfo?id_token=XYZ123
 ```
+
 If the token is properly signed and the iss and exp claims have the expected values, you will get a HTTP 200 response, where the body contains the JSON-formatted ID token claims. Here's an example response:
 
 ```js
