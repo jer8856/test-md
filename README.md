@@ -129,7 +129,7 @@ Check `index.js` to see a complete example.
 
 ### Sample of information retrieved
 
-```js
+```bash
 {
   resourceName: 'people/xxxxx',
   etag: 'xxxxx',
