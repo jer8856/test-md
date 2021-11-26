@@ -125,7 +125,9 @@ const authorizeUrl = oauth2Client.generateAuthUrl({
 });
 ```
 
-Check `index.js` to see a complete example.
+Check `sample.js` to see a complete example.
+
+> run it with `node sample.js`
 
 ### Sample of information retrieved
 
