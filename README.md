@@ -28,69 +28,10 @@ Any application that uses OAuth 2.0 to access Google APIs must have authorizatio
 ![Step 3 ](./files/cp3.png)
 
 After configuration is complete, take note of the client ID that was created. You will need the client ID to complete the next steps. (A client secret is also created, but you need it only for server-side operations.)
+
 ![Step 4](./files/cp4.png)
 
-## Load the Google Platform Library
-
-You must include the Google Platform Library on your web pages that integrate Google Sign-In.
-
-```html
-<script src="https://apis.google.com/js/platform.js" async defer></script>
-```
-## Specify your app's client ID
-
-Specify the client ID you created for your app in the Google Developers Console with the google-signin-client_id meta element.
-
-```html
-<meta name="google-signin-client_id" content="YOUR_CLIENT_ID.apps.googleusercontent.com">
-```
-
->Note: You can also specify your app's client ID with the client_id parameter of the gapi.auth2.init() method.
-
-## Add a Google Sign-In button
-
-The easiest way to add a Google Sign-In button to your site is to use an automatically rendered sign-in button. With only a few lines of code, you can add a button that automatically configures itself to have the appropriate text, logo, and colors for the sign-in state of the user and the scopes you request.
-
-To create a Google Sign-In button that uses the default settings, add a div element with the class **g-signin2** to your sign-in page:
-
-```html
-<div class="g-signin2" data-onsuccess="onSignIn"></div>
-```
-
-## **Get profile information**
-
-After you have signed in a user with Google using the default scopes, you can access the user's Google ID, name, profile URL, and email address.
-
-To retrieve profile information for a user, use the **getBasicProfile()** method.
-
-```js
-function onSignIn(googleUser) {
-  var profile = googleUser.getBasicProfile();
-  console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
-  console.log('Name: ' + profile.getName());
-  console.log('Image URL: ' + profile.getImageUrl());
-  console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
-}
-```
-
->Important: Do not use the Google IDs returned by getId() or the user's profile information to communicate the currently signed in user to your backend server. Instead, send ID tokens, which can be securely validated on the server.
-
-## Sign out a user
-You can enable users to sign out of your app without signing out of Google by adding a sign-out button or link to your site. To create a sign-out link, attach a function that calls the **GoogleAuth.signOut()** method to the link's onclick event.
-
-```html
-<a href="#" onclick="signOut();">Sign out</a>
-<script>
-  function signOut() {
-    var auth2 = gapi.auth2.getAuthInstance();
-    auth2.signOut().then(function () {
-      console.log('User signed out.');
-    });
-  }
-</script>
-```
-
-## Authenticate with a backend server 
+## Authenticate with a backend server using nodejs
 
 If you use Google Sign-In with an app or site that communicates with a backend server, you might need to identify the currently signed-in user on the server. To do so securely, after a user successfully signs in, send the user's ID token to your server using HTTPS. Then, on the server, verify the integrity of the ID token and use the user information contained in the token to establish a session or create a new account.
 
@@ -117,82 +58,110 @@ xhr.onload = function() {
 xhr.send('idtoken=' + id_token);
 ```
 
-## Example of information retrieved printed to the console
+## Example
 
-After configuration of google-auth you can use your client id and run the sample as follow:
+Example taken from [googleapis](https://github.com/googleapis)  documentation.
 
-` pip install simple-http-server `
+People Api must be enabled for the project. To known more about how to enable People Api and its scopes [clic here](https://developers.google.com/people/v1/how-tos/authorizing).
 
-`python -m http.server 8001 --bind localhost`
 
-Now open localhost:8001 in your browser and open console to get the information about the user.
+### Installation
 
-![](./files/sample.png)
+> npm install googleapis
+
+### Using the client library
+
+This is a very simple example. It opens an http server to accept the oauth callback.
+
+```js
+// import googleapis
+
+const {google} = require('googleapis');
+const people = google.people('v1');
+```
+
+We need to handle credentials imports to access api keys
+
+```js
+/**
+ * To use OAuth2 authentication, we need access to a a CLIENT_ID, CLIENT_SECRET, AND REDIRECT_URI.  To get these credentials for your application, visit https://console.cloud.google.com/apis/credentials.
+ */
+const keyPath = path.join(__dirname, 'token.json');
+let keys = {redirect_uris: ['']};
+if (fs.existsSync(keyPath)) {
+  keys = require(keyPath);
+  console.log(keys)
+}
+
+/**
+ * Create a new OAuth2 client with the configured keys.
+ */
+const oauth2Client = new google.auth.OAuth2(
+  keys.client_id,
+  keys.client_secret,
+  keys.redirect_uris[0]
+);
+```
+
+Next, it is necessary to configure googleapis to use authentication credentials
+
+```js
+google.options({auth: oauth2Client});
+```
+
+And finally, we can make a request to the People API after setting up the scopes.
+
+```js
+const scopes = [
+  'https://www.googleapis.com/auth/contacts.readonly',
+  'https://www.googleapis.com/auth/user.emails.read',
+  'profile',
+];
+
+// grab the url that will be used for authorization
+const authorizeUrl = oauth2Client.generateAuthUrl({
+  access_type: 'offline',
+  scope: scopes.join(' '),
+});
+```
+
+Check `index.js` to see a complete example.
+
+### Sample of information retrieved
+
+```json
+{
+  resourceName: 'people/xxxxx',
+  etag: 'xxxxx',
+  emailAddresses: [ { metadata: [Object], value: 'xxxxx@gmail.com' } ]
+}
+
+```
+
+### Credential example
+
+```json
+{
+    "client_id": "xxxxx",
+    "project_id": "xxxxx",
+    "auth_uri": "xxxxx",
+    "token_uri": "xxxxx",
+    "auth_provider_x509_cert_url": "xxxxx",
+    "client_secret": "xxxxx",
+    "redirect_uris": [
+        "http://localhost:8001"
+    ],
+    "javascript_origins": [
+        "http://localhost:8001"
+    ]
+}
+```
 
 ***
-
-# Verify the integrity of the ID token
-
-After you receive the ID token by HTTPS POST, you must verify the integrity of the token.
-
-To verify that the token is valid, ensure that the following criteria are satisfied:
-
-- The ID token is properly signed by Google. Use Google's public keys (available in [JWK](https://www.googleapis.com/oauth2/v3/certs) or [PEM](https://www.googleapis.com/oauth2/v1/certs) format) to verify the token's signature. These keys are regularly rotated; examine the **Cache-Control** header in the response to determine when you should retrieve them again.
-- The value of aud in the ID token is equal to one of your app's client IDs. This check is necessary to prevent ID tokens issued to a malicious app being used to access data about the same user on your app's backend server.
-- The value of iss in the ID token is equal to accounts.google.com or https://accounts.google.com.
-- The expiry time (exp) of the ID token has not passed.
-- If you want to restrict access to only members of your G Suite domain, verify that the ID token has an hd claim that matches your G Suite domain name.
-
-Rather than writing your own code to perform these verification steps, we strongly recommend using a Google API client library for your platform, or a general-purpose JWT library. For development and debugging, you can call our tokeninfo validation endpoint.
 
 # Using a Google API Client Library
 
 Using one of the Google API Client Libraries (e.g. Java, Node.js, PHP, Python) is the recommended way to validate Google ID tokens in a production environment.
-
-### Java
-
-To validate an ID token in Java, use the [GoogleIdTokenVerifier](https://github.com/googleapis/google-api-java-client/blob/master/google-api-client/src/main/java/com/google/api/client/googleapis/auth/oauth2/GoogleIdTokenVerifier.java) object. For example:
-
-```java
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-
-...
-
-GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
-    // Specify the CLIENT_ID of the app that accesses the backend:
-    .setAudience(Collections.singletonList(CLIENT_ID))
-    // Or, if multiple clients access the backend:
-    //.setAudience(Arrays.asList(CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3))
-    .build();
-
-// (Receive idTokenString by HTTPS POST)
-
-GoogleIdToken idToken = verifier.verify(idTokenString);
-if (idToken != null) {
-  Payload payload = idToken.getPayload();
-
-  // Print user identifier
-  String userId = payload.getSubject();
-  System.out.println("User ID: " + userId);
-
-  // Get profile information from payload
-  String email = payload.getEmail();
-  boolean emailVerified = Boolean.valueOf(payload.getEmailVerified());
-  String name = (String) payload.get("name");
-  String pictureUrl = (String) payload.get("picture");
-  String locale = (String) payload.get("locale");
-  String familyName = (String) payload.get("family_name");
-  String givenName = (String) payload.get("given_name");
-
-  // Use or store profile information
-  // ...
-
-} else {
-  System.out.println("Invalid ID token.");
-}
-```
 
 ### Node.js
 
@@ -217,28 +186,6 @@ async function verify() {
   // const domain = payload['hd'];
 }
 verify().catch(console.error);
-```
-
-### PHP
-To validate an ID token in PHP, use the [Google API Client Library for PHP](https://github.com/google/google-api-php-client/). Install the library (for example, using Composer):
-
-```php
-composer require google/apiclient
-Then, call the verifyIdToken() function. For example:
-
-require_once 'vendor/autoload.php';
-
-// Get $id_token via HTTPS POST.
-
-$client = new Google_Client(['client_id' => $CLIENT_ID]);  // Specify the CLIENT_ID of the app that accesses the backend
-$payload = $client->verifyIdToken($id_token);
-if ($payload) {
-  $userid = $payload['sub'];
-  // If request specified a G Suite domain:
-  //$domain = $payload['hd'];
-} else {
-  // Invalid ID token
-}
 ```
 
 ### Python
@@ -314,15 +261,7 @@ If the token is properly signed and the iss and exp claims have the expected val
 
 If you are a G Suite customer, you might also be interested in the hd claim, which indicates the hosted domain of the user. This can be used to restrict access to a resource to only members of certain domains. The absence of this claim indicates that the user does not belong to a G Suite hosted domain.
 
-## Create an account or session
-
-After you have verified the token, check if the user is already in your user database. If so, establish an authenticated session for the user. If the user isn't yet in your user database, create a new user record from the information in the ID token payload, and establish a session for the user. You can prompt the user for any additional profile information you require when you detect a newly created user in your app.
-
-## Securing your users' accounts with Cross Account Protection
-
-When you rely on Google to sign in a user, you'll automatically benefit from all of the security features and infrastructure Google has built to safeguard the user's data. However, in the unlikely event that the user's Google Account gets compromised or there is some other significant security event, your app can also be vulnerable to attack. To better protect your accounts from any major security events, use Cross Account Protection to receive security alerts from Google. When you receive these events, you gain visibility into important changes to the security of the user's Google account and you can then take action on your service to secure your accounts.
-
----
+***
 
 # Google Sign-In JavaScript client reference 
 
@@ -473,10 +412,10 @@ Revokes all of the scopes that the user granted for the application.
 
 ***
 
-## Google API Services User Data Policy 
+## Google API Services User Data Policy
 
 To known better about terms of services when you request access to Google APIs, you can read the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy).
 
-## OAuth2 Google Apis
+## OAuth2 Google Apis Scopes
 
-To get the Scompe of all listed Apis provided by Google go to [OAuth2 Scopes](https://developers.google.com/identity/protocols/oauth2/scopes)
+To get the Scope of all listed Apis provided by Google go to [OAuth2 Scopes](https://developers.google.com/identity/protocols/oauth2/scopes)
